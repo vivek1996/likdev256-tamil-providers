@@ -10,7 +10,7 @@ import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 
 class TamilYogiProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://tamilyogi.plus"
+    override var mainUrl = "https://1tamilyogi.luxe"
     override var name = "TamilYogi"
     override val hasMainPage = true
     override var lang = "ta"
@@ -23,10 +23,10 @@ class TamilYogiProvider : MainAPI() { // all providers must be an instance of Ma
     //private const val TAG = "TamilYogi"
 
     override val mainPage = mainPageOf(
-        "$mainUrl/category/tamilyogi-full-movie-online/" to "New Movies",
-        "$mainUrl/category/tamil-hd-movies/" to "HD Movies",
-        "$mainUrl/category/tamilyogi-dubbed-movies-online/" to "Dubbed Movies",
-        "$mainUrl/category/tamil-web-series/" to "TV Series"
+        "$mainUrl/tamil-movies-online-new/" to "New Movies",
+        "$mainUrl/tamil-hd-movies/" to "HD Movies",
+        "$mainUrl/tamil-dubbed-movies-online-one-new/" to "Dubbed Movies",
+        "$mainUrl/tamilyogi-tamil-web-series-new/" to "TV Series"
     )
 
     override suspend fun getMainPage(
@@ -43,7 +43,7 @@ class TamilYogiProvider : MainAPI() { // all providers must be an instance of Ma
             app.get(request.data + "page/" + page).document
         }
         //Log.d("CSS element", document.select("ul li").toString())
-        val home = document.select("ul li").mapNotNull {
+        val home = document.select("grid-items item").mapNotNull {
             it.toSearchResult()
         }
         return HomePageResponse(arrayListOf(HomePageList(request.name, home, isHorizontalImages = true)), hasNext = true)
@@ -90,7 +90,7 @@ class TamilYogiProvider : MainAPI() { // all providers must be an instance of Ma
         val document = app.get("$mainUrl/?s=$query").document
         //Log.d("document", document.toString())
 
-        return document.select("ul li").mapNotNull {
+        return document.select("grid-items item").mapNotNull {
             it.toSearchResult()
         }
     }
@@ -119,7 +119,7 @@ class TamilYogiProvider : MainAPI() { // all providers must be an instance of Ma
         //val trailer = fixUrlNull(document.select("iframe#iframe-trailer").attr("src"))
         //val rating = document.select("div.mvici-right > div.imdb_r span").text().toRatingInt()
         //val actors = document.select("div.mvici-left p:nth-child(3) a").map { it.text() }
-        val recommendations = doc.select("ul li").mapNotNull {
+        val recommendations = doc.select("grid-items item").mapNotNull {
             it.toSearchResult()
         }
 
@@ -174,10 +174,12 @@ class TamilYogiProvider : MainAPI() { // all providers must be an instance of Ma
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         val linkRegex = Regex("https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)mp4")
-        val source = app.get(data).document.select("div.entry iframe").attr("src")
-        val script = app.get(source, referer = "$mainUrl/").document.select("body > script").toString()
+        val source = app.get(data).document.select("div.entry-content p:nth-of-type(3)")
+        // get the links from the source
+        val links = linkRegex.findAll(source.toString()).map { it.value.trim() }.toList()
+        // val script = app.get(source, referer = "$mainUrl/").document.select("body > script").toString()
         //val links = linkRegex.find(script)?.groups?.get(1)?.value.toString()
-        val links = linkRegex.findAll(script).map{it.value.trim()}.toList()
+        // val links = linkRegex.findAll(script).map{it.value.trim()}.toList()
         //Log.d("links", links.toString())
             safeApiCall {
                 callback.invoke(
